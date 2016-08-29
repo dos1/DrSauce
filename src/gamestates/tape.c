@@ -35,6 +35,7 @@ int Gamestate_ProgressCount = 1; // number of loading steps as reported by Games
 
 void Gamestate_Logic(struct Game *game, struct GamestateResources* data) {
 	// Called 60 times per second. Here you should do all your game logic.
+	AnimateCharacter(game, data->status, 1);
 
 }
 
@@ -56,6 +57,23 @@ void Gamestate_ProcessEvent(struct Game *game, struct GamestateResources* data, 
 		UnloadCurrentGamestate(game); // mark this gamestate to be stopped and unloaded
 		// When there are no active gamestates, the engine will quit.
 	}
+
+	if (ev->type == DRSAUCE_EVENT_STATUS_UPDATE) {
+		char name[5] = "0000";
+		if (game->data->status.atari) {
+			name[0] = '1';
+		}
+		if (game->data->status.pegasus) {
+			name[1] = '1';
+		}
+		if (game->data->status.tape) {
+			name[2] = '1';
+		}
+		if (game->data->status.floppy) {
+			name[3] = '1';
+		}
+		SelectSpritesheet(game, data->status, name);
+	}
 }
 
 void* Gamestate_Load(struct Game *game, void (*progress)(struct Game*)) {
@@ -75,7 +93,22 @@ void* Gamestate_Load(struct Game *game, void (*progress)(struct Game*)) {
 	SelectSpritesheet(game, data->tape, "fixing");
 
 	data->status = CreateCharacter(game, "status");
+	RegisterSpritesheet(game, data->status, "0000");
+	RegisterSpritesheet(game, data->status, "0001");
+	RegisterSpritesheet(game, data->status, "0010");
+	RegisterSpritesheet(game, data->status, "0011");
+	RegisterSpritesheet(game, data->status, "0100");
+	RegisterSpritesheet(game, data->status, "0101");
+	RegisterSpritesheet(game, data->status, "0110");
 	RegisterSpritesheet(game, data->status, "0111");
+	RegisterSpritesheet(game, data->status, "1000");
+	RegisterSpritesheet(game, data->status, "1001");
+	RegisterSpritesheet(game, data->status, "1010");
+	RegisterSpritesheet(game, data->status, "1011");
+	RegisterSpritesheet(game, data->status, "1100");
+	RegisterSpritesheet(game, data->status, "1101");
+	RegisterSpritesheet(game, data->status, "1110");
+	RegisterSpritesheet(game, data->status, "1111");
 	LoadSpritesheets(game, data->status);
 	SelectSpritesheet(game, data->status, "0111");
 

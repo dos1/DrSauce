@@ -171,7 +171,7 @@ void Gamestate_ProcessEvent(struct Game *game, struct GamestateResources* data, 
 		return;
 	}
 
-	if (ev->type == ALLEGRO_EVENT_MOUSE_BUTTON_DOWN) {
+	if ((ev->type == ALLEGRO_EVENT_MOUSE_BUTTON_DOWN) && (game->data->mouse_visible)) {
 		if ((game->data->mousex < 140) && (!data->shovel_locked) && (!data->shovel_full)) {
 			SelectSpritesheet(game, data->shovel, "use");
 			data->shovel_locked = true;

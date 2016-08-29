@@ -68,7 +68,9 @@ void Gamestate_Draw(struct Game *game, struct GamestateResources* data) {
 	if (data->blowing) {
 		DrawCharacter(game, data->cartridge, al_map_rgb(255,255,255), 0);
 	}
-	DrawCharacter(game, data->cursor, al_map_rgb(255,255,255), 0);
+	if (game->data->mouse_visible) {
+		DrawCharacter(game, data->cursor, al_map_rgb(255,255,255), 0);
+	}
 
 	al_set_target_backbuffer(game->display);
 }
@@ -119,7 +121,7 @@ void Gamestate_ProcessEvent(struct Game *game, struct GamestateResources* data, 
 		return;
 	}
 
-	if (ev->type == ALLEGRO_EVENT_MOUSE_BUTTON_DOWN) {
+	if ((ev->type == ALLEGRO_EVENT_MOUSE_BUTTON_DOWN) && (game->data->mouse_visible)) {
 		if (IsOnCharacter(game, data->pegasus, game->data->mousex, game->data->mousey)) {
 			SelectSpritesheet(game, data->tv, "empty");
 			SelectSpritesheet(game, data->pegasus, "empty");
