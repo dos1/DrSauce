@@ -30,15 +30,39 @@ struct GamestateResources {
 
 int Gamestate_ProgressCount = 1; // number of loading steps as reported by Gamestate_Load
 
+float max(int a, int b) {
+	return (a>b) ? a : b;
+}
+
 void Gamestate_Logic(struct Game *game, struct GamestateResources* data) {
 	// Called 60 times per second. Here you should do all your game logic.
-	game->data->offset+=2;
-	if (game->data->offset >= 4*320) {
-		game->data->offset -= 4*320;
-	}
-	if (game->data->offset < 0) {
-		game->data->offset += 4*320;
-	}
+	//if (game->data->offset % 320 == 0) {
+	  game->data->current_screen = game->data->offset / 320;
+	//}
+	//if (game->data->current_screen != game->data->desired_screen) {
+
+		int desired = game->data->desired_screen;
+		if (game->data->forward && game->data->desired_screen < game->data->current_screen) {
+			desired += 4;
+		}
+		//else if (!game->data->forward && game->data->desired_screen > game->data->current_screen) {
+		//	desired -= 4;
+		//}
+
+		if (game->data->offset != game->data->desired_screen * 320) {
+			game->data->offset += max(abs((desired*320 - game->data->offset)/8), 1) * (game->data->forward ? 1 : -1);
+		}
+
+		if (game->data->offset >= 4*320) {
+			game->data->offset -= 4*320;
+		}
+		if (game->data->offset < 0) {
+			game->data->offset += 4*320;
+		}
+
+		//PrintConsole(game, "desired %d, current %d, forward %d, offset %d", game->data->desired_screen, game->data->current_screen, game->data->forward, game->data->offset);
+
+	//}
 }
 
 void Gamestate_Draw(struct Game *game, struct GamestateResources* data) {

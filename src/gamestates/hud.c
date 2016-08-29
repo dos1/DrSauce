@@ -19,32 +19,41 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.
  */
 
+#include "../common.h"
 #include <libsuperderpy.h>
 
 struct GamestateResources {
 		// This struct is for every resource allocated and used by your gamestate.
 		// It gets created on load and then gets passed around to all other function calls.
-		ALLEGRO_FONT *font;
-		int blink_counter;
+		ALLEGRO_FONT *font, *dialog;
+		int alpha;
 };
 
 int Gamestate_ProgressCount = 1; // number of loading steps as reported by Gamestate_Load
 
 void Gamestate_Logic(struct Game *game, struct GamestateResources* data) {
 	// Called 60 times per second. Here you should do all your game logic.
-	data->blink_counter++;
-	if (data->blink_counter >= 60) {
-		data->blink_counter = 0;
+	if (game->data->text && data->alpha < 0) {
+		data->alpha+=1;
+	}
+	if (!game->data->text && data->alpha > -20) {
+		data->alpha-=1;
 	}
 }
 
 void Gamestate_Draw(struct Game *game, struct GamestateResources* data) {
 	// Called as soon as possible, but no sooner than next Gamestate_Logic call.
 	// Draw everything to the screen here.
-	if (data->blink_counter < 50) {
-		al_draw_text(data->font, al_map_rgb(255,255,255), game->viewport.width / 2, game->viewport.height / 2,
-		             ALLEGRO_ALIGN_CENTRE, "Nothing to see here, move along!");
+	DrawTextWithShadow(data->font, al_map_rgb(255,255,255), 10, game->viewport.height / 2 - 10,
+	             ALLEGRO_ALIGN_LEFT, "<");
+	DrawTextWithShadow(data->font, al_map_rgb(255,255,255), game->viewport.width - 10, game->viewport.height / 2 - 10,
+	             ALLEGRO_ALIGN_RIGHT, ">");
+
+	if (game->data->text) {
+		al_draw_filled_rectangle(0, 0, 320, 20 + data->alpha, al_map_rgba(0,0,0,128));
+		DrawTextWithShadow(data->dialog, al_map_rgb(255,255,255), game->viewport.width / 2, 5 + data->alpha, ALLEGRO_ALIGN_CENTER, game->data->text);
 	}
+
 }
 
 void Gamestate_ProcessEvent(struct Game *game, struct GamestateResources* data, ALLEGRO_EVENT *ev) {
@@ -54,13 +63,45 @@ void Gamestate_ProcessEvent(struct Game *game, struct GamestateResources* data, 
 		UnloadCurrentGamestate(game); // mark this gamestate to be stopped and unloaded
 		// When there are no active gamestates, the engine will quit.
 	}
+
+	if (ev->type==ALLEGRO_EVENT_KEY_DOWN) {
+		if (ev->keyboard.keycode == ALLEGRO_KEY_LEFT) {
+			game->data->desired_screen--;
+			if (game->data->desired_screen < 0) {
+				game->data->desired_screen = 3;
+			}
+			game->data->forward = false;
+			ALLEGRO_EVENT ev;
+			ev.user.type = DRSAUCE_EVENT_SWITCH_SCREEN;
+			ev.user.data1 = game->data->desired_screen;
+			al_emit_user_event(&(game->event_source), &ev, NULL);
+		} else if (ev->keyboard.keycode == ALLEGRO_KEY_RIGHT) {
+			game->data->desired_screen++;
+			if (game->data->desired_screen > 3) {
+				game->data->desired_screen = 0;
+			}
+			game->data->forward = true;
+			ALLEGRO_EVENT ev;
+			ev.user.type = DRSAUCE_EVENT_SWITCH_SCREEN;
+			ev.user.data1 = game->data->desired_screen;
+			al_emit_user_event(&(game->event_source), &ev, NULL);
+		}
+		PrintConsole(game, "KEY desired %d, current %d, forward %d, offset %d", game->data->desired_screen, game->data->current_screen, game->data->forward, game->data->offset);
+	}
+
+	if (ev->type==ALLEGRO_EVENT_MOUSE_AXES) {
+		game->data->mousex = (ev->mouse.x / (float)al_get_display_width(game->display)) * game->viewport.width;
+		game->data->mousey = (ev->mouse.y / (float)al_get_display_height(game->display)) * game->viewport.height;
+		game->data->mouse_visible = true;
+	}
 }
 
 void* Gamestate_Load(struct Game *game, void (*progress)(struct Game*)) {
 	// Called once, when the gamestate library is being loaded.
 	// Good place for allocating memory, loading bitmaps etc.
 	struct GamestateResources *data = malloc(sizeof(struct GamestateResources));
-	data->font = al_create_builtin_font();
+	data->font = al_load_font(GetDataFilePath(game, "fonts/PerfectDOSVGA437.ttf"), 32, 0);
+	data->dialog = al_load_font(GetDataFilePath(game, "fonts/MonkeyIsland.ttf"), 8, 0);
 	progress(game); // report that we progressed with the loading, so the engine can draw a progress bar
 	return data;
 }
@@ -69,13 +110,14 @@ void Gamestate_Unload(struct Game *game, struct GamestateResources* data) {
 	// Called when the gamestate library is being unloaded.
 	// Good place for freeing all allocated memory and resources.
 	al_destroy_font(data->font);
+	al_destroy_font(data->dialog);
 	free(data);
 }
 
 void Gamestate_Start(struct Game *game, struct GamestateResources* data) {
 	// Called when this gamestate gets control. Good place for initializing state,
 	// playing music etc.
-	data->blink_counter = 0;
+	data->alpha = -20;
 }
 
 void Gamestate_Stop(struct Game *game, struct GamestateResources* data) {

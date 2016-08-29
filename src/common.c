@@ -30,7 +30,10 @@ struct CommonResources* CreateGameData(struct Game *game) {
 	data->tape = al_create_bitmap(320, 180);
 	data->floppy = al_create_bitmap(320, 180);
 
-	data->offset = 320;
+	data->offset = 0;
+
+	data->text = NULL;
+	data->doctor = false;
 
 	return data;
 }
