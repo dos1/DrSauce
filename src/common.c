@@ -23,10 +23,41 @@
 #include <libsuperderpy.h>
 
 struct CommonResources* CreateGameData(struct Game *game) {
-	return calloc(1, sizeof(struct CommonResources));
+	struct CommonResources* data = calloc(1, sizeof(struct CommonResources));
+
+	data->atari = al_create_bitmap(320, 180);
+	data->pegasus = al_create_bitmap(320, 180);
+	data->tape = al_create_bitmap(320, 180);
+	data->floppy = al_create_bitmap(320, 180);
+
+	data->offset = 320;
+
+	return data;
 }
 
 void DestroyGameData(struct Game *game, struct CommonResources *resources) {
+	al_destroy_bitmap(game->data->atari);
+	al_destroy_bitmap(game->data->pegasus);
+	al_destroy_bitmap(game->data->tape);
+	al_destroy_bitmap(game->data->floppy);
 	free(resources);
+}
+
+void StartGame(struct Game *game) {
+	UnloadAllGamestates(game);
+
+	LoadGamestate(game, "atari");
+	LoadGamestate(game, "pegasus");
+	LoadGamestate(game, "tape");
+	LoadGamestate(game, "floppy");
+	LoadGamestate(game, "stage");
+	LoadGamestate(game, "hud");
+
+	StartGamestate(game, "atari");
+	StartGamestate(game, "pegasus");
+	StartGamestate(game, "tape");
+	StartGamestate(game, "floppy");
+	StartGamestate(game, "stage");
+	StartGamestate(game, "hud");
 }
 
