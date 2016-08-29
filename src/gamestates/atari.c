@@ -99,7 +99,7 @@ void Gamestate_Logic(struct Game *game, struct GamestateResources* data) {
 
 	data->counter++;
 
-	PrintConsole(game, "temp %f, coal %d", data->temperature, data->coal_amount);
+	//PrintConsole(game, "temp %f, coal %d", data->temperature, data->coal_amount);
 
 	AnimateCharacter(game, data->atari, 1);
 	AnimateCharacter(game, data->meter, 1);
@@ -160,6 +160,17 @@ void Gamestate_ProcessEvent(struct Game *game, struct GamestateResources* data, 
 		// When there are no active gamestates, the engine will quit.
 	}
 
+	if (ev->type == DRSAUCE_EVENT_SWITCH_SCREEN) {
+		SelectSpritesheet(game, data->shovel, "shovel");
+		data->shovel_locked = false;
+		data->shovel_full = false;
+		TM_CleanQueue(data->timeline);
+	}
+
+	if (game->data->current_screen != 0) {
+		return;
+	}
+
 	if (ev->type == ALLEGRO_EVENT_MOUSE_BUTTON_DOWN) {
 		if ((game->data->mousex < 140) && (!data->shovel_locked) && (!data->shovel_full)) {
 			SelectSpritesheet(game, data->shovel, "use");
@@ -177,13 +188,6 @@ void Gamestate_ProcessEvent(struct Game *game, struct GamestateResources* data, 
 			}
 			data->coal_amount += 6;
 		}
-	}
-
-	if (ev->type == DRSAUCE_EVENT_SWITCH_SCREEN) {
-		SelectSpritesheet(game, data->shovel, "shovel");
-		data->shovel_locked = false;
-		data->shovel_full = false;
-		TM_CleanQueue(data->timeline);
 	}
 
 }

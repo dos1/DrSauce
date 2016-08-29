@@ -94,6 +94,10 @@ void Gamestate_ProcessEvent(struct Game *game, struct GamestateResources* data, 
 		game->data->mousey = (ev->mouse.y / (float)al_get_display_height(game->display)) * game->viewport.height;
 		game->data->mouse_visible = true;
 	}
+
+	if (ev->type == DRSAUCE_EVENT_STATUS_UPDATE) {
+		PrintConsole(game, "status: %d%d%d%d", game->data->status.atari, game->data->status.pegasus, game->data->status.tape, game->data->status.floppy);
+	}
 }
 
 void* Gamestate_Load(struct Game *game, void (*progress)(struct Game*)) {

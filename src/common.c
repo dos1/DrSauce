@@ -62,5 +62,10 @@ void StartGame(struct Game *game) {
 	StartGamestate(game, "floppy");
 	StartGamestate(game, "stage");
 	StartGamestate(game, "hud");
+
+	game->data->status.atari = true;
+	game->data->status.floppy = true;
+	game->data->status.pegasus = true;
+	game->data->status.tape = true;
 }
 
