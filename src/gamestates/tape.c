@@ -31,6 +31,7 @@ struct GamestateResources {
 		struct Character *cursor;
 		struct Character *timemachine;
 		struct Character *status;
+		int charge;
 		bool full;
 		ALLEGRO_SAMPLE *sample;
 		ALLEGRO_SAMPLE_INSTANCE *sample_instance;
@@ -73,10 +74,13 @@ void Gamestate_Logic(struct Game *game, struct GamestateResources* data) {
 			}
 
 		} else {
-			char text[10] = "charging0";
-			text[8] += game->data->charge / 1000;
+			if ((game->data->charge / 1000) != data->charge) {
+				char text[10] = "charging0";
+				text[8] += game->data->charge / 1000;
 
-			SelectSpritesheet(game, data->timemachine, text);
+				SelectSpritesheet(game, data->timemachine, text);
+				data->charge = game->data->charge / 1000;
+			}
 
 		}
 
@@ -272,6 +276,7 @@ void Gamestate_Start(struct Game *game, struct GamestateResources* data) {
 	SetCharacterPosition(game, data->tape, 82, 25, 0);
 	SetCharacterPosition(game, data->drive, 669-640, 108, 0);
 	data->full = false;
+	data->charge = 0;
 }
 
 void Gamestate_Stop(struct Game *game, struct GamestateResources* data) {
