@@ -31,6 +31,7 @@ struct GamestateResources {
 		struct Character *cursor;
 		struct Character *timemachine;
 		struct Character *status;
+		bool full;
 		ALLEGRO_SAMPLE *sample;
 		ALLEGRO_SAMPLE_INSTANCE *sample_instance;
 		ALLEGRO_SAMPLE *sample2;
@@ -43,6 +44,7 @@ int Gamestate_ProgressCount = 1; // number of loading steps as reported by Games
 void Gamestate_Logic(struct Game *game, struct GamestateResources* data) {
 	// Called 60 times per second. Here you should do all your game logic.
 	AnimateCharacter(game, data->status, 1);
+	AnimateCharacter(game, data->timemachine, 1);
 	SetCharacterPosition(game, data->cursor, game->data->mousex, game->data->mousey, 0);
 	TM_Process(data->timeline);
 
@@ -64,8 +66,11 @@ void Gamestate_Logic(struct Game *game, struct GamestateResources* data) {
 	}
 
 	if (!game->data->won) {
-		if (game->data->charge == 10000) {
-			SelectSpritesheet(game, data->timemachine, "full");
+		if (game->data->charge >= 10000) {
+			if (!data->full) {
+				SelectSpritesheet(game, data->timemachine, "full");
+				data->full = true;
+			}
 
 		} else {
 			char text[10] = "charging0";
@@ -266,6 +271,7 @@ void Gamestate_Start(struct Game *game, struct GamestateResources* data) {
 	SetCharacterPosition(game, data->timemachine, 848-640, 12, 0);
 	SetCharacterPosition(game, data->tape, 82, 25, 0);
 	SetCharacterPosition(game, data->drive, 669-640, 108, 0);
+	data->full = false;
 }
 
 void Gamestate_Stop(struct Game *game, struct GamestateResources* data) {
