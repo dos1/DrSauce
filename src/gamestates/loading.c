@@ -33,12 +33,12 @@ void Draw(struct Game *game, struct LoadingResources *data, float p) {
 //		SetupViewport(game, game->viewport_config);
 		al_flip_display();
 		            al_draw_bitmap(data->bg,0,0,0);
-		//al_rest(0.2);
+		al_rest(0.2);
 	} else {
 		al_clear_to_color(al_map_rgb(0,0,0));
 //		SetupViewport(game, game->viewport_config);
 		al_flip_display();
-		//al_rest(0.5);
+		al_rest(0.5);
 		            al_clear_to_color(al_map_rgb(0,0,0));
 	}
 }

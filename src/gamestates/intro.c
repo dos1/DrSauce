@@ -30,8 +30,12 @@ struct GamestateResources {
 		ALLEGRO_BITMAP *sos;
 		ALLEGRO_BITMAP *machine;
 		ALLEGRO_BITMAP *bg1, *bg2;
-		struct Character *bird;
+		ALLEGRO_BITMAP *bird;
 		ALLEGRO_AUDIO_STREAM *music, *music2;
+
+		ALLEGRO_SAMPLE *sample;
+		ALLEGRO_SAMPLE_INSTANCE *sample_instance;
+
 		bool show;
 		bool finished;
 		int rotation;
@@ -48,6 +52,7 @@ void Gamestate_Draw(struct Game *game, struct GamestateResources* data) {
 	// Called as soon as possible, but no sooner than next Gamestate_Logic call.
 	// Draw everything to the screen here.
 	al_draw_bitmap(data->bg, 0, 0, 0);
+	al_draw_bitmap(data->bird, 0, 0 ,0);
 	if (data->show) {
 		al_draw_bitmap(data->machine, 0, 0 ,0);
 		al_draw_bitmap(data->sos, 0, 0 ,0);
@@ -69,6 +74,7 @@ bool TimeTravel(struct Game *game, struct TM_Action *action, enum TM_ActionState
 	struct GamestateResources *data = TM_GetArg(action->arguments, 0);
 	if (state == TM_ACTIONSTATE_RUNNING) {
 		data->show = true;
+		al_play_sample_instance(data->sample_instance);
 	}
 	return true;
 }
@@ -90,6 +96,9 @@ bool Finish(struct Game *game, struct TM_Action *action, enum TM_ActionState sta
 	if (state == TM_ACTIONSTATE_RUNNING) {
 		data->finished = true;
 		game->data->tutorial = false;
+		game->data->desired_screen=2;
+		game->data->forward = true;
+		game->data->charge=0;
 		al_set_audio_stream_playing(data->music, false);
 		al_set_audio_stream_playing(data->music2, true);
 
@@ -170,24 +179,30 @@ void* Gamestate_Load(struct Game *game, void (*progress)(struct Game*)) {
 
 	data->machine = al_load_bitmap(GetDataFilePath(game, "machin.png"));
 	data->sos = al_load_bitmap(GetDataFilePath(game, "dr.png"));
-/*
+	data->bird = al_load_bitmap(GetDataFilePath(game, "pidgey.png"));
+
+	data->sample = al_load_sample(GetDataFilePath(game, "boom.flac"));
+	data->sample_instance = al_create_sample_instance(data->sample);
+	al_attach_sample_instance_to_mixer(data->sample_instance, game->audio.fx);
+
+
 	TM_AddAction(data->timeline, Speak, TM_AddToArgs(NULL, 3, data, al_load_audio_stream(GetDataFilePath(game, "voice/0.flac"), 4, 1024),
-																									 "A crazy scientist from the future"), "speak");
+	                                                 "A crazy scientist from the future"), "speak");
 	TM_AddAction(data->timeline, Speak, TM_AddToArgs(NULL, 3, data, al_load_audio_stream(GetDataFilePath(game, "voice/1.flac"), 4, 1024),
-																									 "built a time machine"), "speak");
+	                                                 "built a time machine"), "speak");
 	TM_AddAction(data->timeline, Speak, TM_AddToArgs(NULL, 3, data, al_load_audio_stream(GetDataFilePath(game, "voice/2.flac"), 4, 1024),
-																									 "and he went back in time."), "speak");
+	                                                 "and he went back in time."), "speak");
 
 	TM_AddDelay(data->timeline, 500);
 	TM_AddAction(data->timeline, TimeTravel, TM_AddToArgs(NULL, 1, data), "timetravel");
 	TM_AddDelay(data->timeline, 1500);
 
 	TM_AddAction(data->timeline, Speak, TM_AddToArgs(NULL, 3, data, al_load_audio_stream(GetDataFilePath(game, "voice/3.flac"), 4, 1024),
-																									 "Unfortunately, his time machine broke!"), "speak");
+	                                                 "Unfortunately, his time machine broke!"), "speak");
 	TM_AddAction(data->timeline, Speak, TM_AddToArgs(NULL, 3, data, al_load_audio_stream(GetDataFilePath(game, "voice/4a.flac"), 4, 1024),
-																									 "Oh oh!"), "speak");
+	                                                 "Oh oh!"), "speak");
 	TM_AddAction(data->timeline, Speak, TM_AddToArgs(NULL, 3, data, al_load_audio_stream(GetDataFilePath(game, "voice/4b.flac"), 4, 1024),
-																									 "- said crazy scientist"), "speak");
+	                                                 "- said crazy scientist"), "speak");
 
 	//---------------
 	TM_AddDelay(data->timeline, 250);
@@ -196,14 +211,14 @@ void* Gamestate_Load(struct Game *game, void (*progress)(struct Game*)) {
 	TM_AddQueuedBackgroundAction(data->timeline, Rotate, TM_AddToArgs(NULL, 1, data), 0, "rotate");
 
 	TM_AddAction(data->timeline, Speak, TM_AddToArgs(NULL, 3, data, al_load_audio_stream(GetDataFilePath(game, "voice/5.flac"), 4, 1024),
-																									 "Now he got some pieces of ancient technology"), "speak");
+	                                                 "Now he got some pieces of ancient technology"), "speak");
 	TM_AddAction(data->timeline, Speak, TM_AddToArgs(NULL, 3, data, al_load_audio_stream(GetDataFilePath(game, "voice/6.flac"), 4, 1024),
-																									 "and he's trying to fix his time machine."), "speak");
+	                                                 "and he's trying to fix his time machine."), "speak");
 	TM_AddAction(data->timeline, Speak, TM_AddToArgs(NULL, 3, data, al_load_audio_stream(GetDataFilePath(game, "voice/7.flac"), 4, 1024),
-																									 "I need all of these working together!"), "speak");
+	                                                 "I need all of these working together!"), "speak");
 	TM_AddAction(data->timeline, Speak, TM_AddToArgs(NULL, 3, data, al_load_audio_stream(GetDataFilePath(game, "voice/8.flac"), 4, 1024),
-																									 "- said crazy scientist"), "speak");
-*/		TM_AddAction(data->timeline, StartOthers, TM_AddToArgs(NULL, 1, data), "start");
+	                                                 "- said crazy scientist"), "speak");
+//		TM_AddAction(data->timeline, StartOthers, TM_AddToArgs(NULL, 1, data), "start");
 TM_AddAction(data->timeline, Finish, TM_AddToArgs(NULL, 1, data), "finish");
 
   return data;

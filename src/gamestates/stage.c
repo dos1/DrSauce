@@ -63,6 +63,10 @@ void Gamestate_Logic(struct Game *game, struct GamestateResources* data) {
 		//PrintConsole(game, "desired %d, current %d, forward %d, offset %d", game->data->desired_screen, game->data->current_screen, game->data->forward, game->data->offset);
 
 	//}
+
+		if (!game->data->tutorial && !game->data->won) {
+			game->data->timer++;
+		}
 }
 
 void Gamestate_Draw(struct Game *game, struct GamestateResources* data) {

@@ -39,6 +39,8 @@ struct CommonResources* CreateGameData(struct Game *game) {
 	data->sample_instance = al_create_sample_instance(data->sample);
 	al_attach_sample_instance_to_mixer(data->sample_instance, game->audio.fx);
 
+	data->charge = 0;
+
 	return data;
 }
 
@@ -73,6 +75,9 @@ void StartGame(struct Game *game) {
 	game->data->status.floppy = true;
 	game->data->status.pegasus = true;
 	game->data->status.tape = true;
+	game->data->won = false;
+
+	game->data->timer = 0;
 }
 
 void UpdateStatus(struct Game *game) {
@@ -81,6 +86,8 @@ void UpdateStatus(struct Game *game) {
 	al_emit_user_event(&(game->event_source), &ev, NULL);
 
 	if (!game->data->status.atari || !game->data->status.floppy || !game->data->status.pegasus || !game->data->status.tape) {
-		al_play_sample_instance(game->data->sample_instance);
+		if (!game->data->won) {
+			al_play_sample_instance(game->data->sample_instance);
+		}
 	}
 }

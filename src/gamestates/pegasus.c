@@ -34,6 +34,9 @@ struct GamestateResources {
 		bool broken;
 		bool blowing;
 		int timer;
+		ALLEGRO_SAMPLE *sample;
+		ALLEGRO_SAMPLE_INSTANCE *sample_instance;
+
 };
 
 int Gamestate_ProgressCount = 1; // number of loading steps as reported by Gamestate_Load
@@ -124,6 +127,7 @@ void Gamestate_ProcessEvent(struct Game *game, struct GamestateResources* data, 
 			SelectSpritesheet(game, data->tv, "empty");
 			SelectSpritesheet(game, data->pegasus, "empty");
 			data->blowing = true;
+			al_play_sample_instance(data->sample_instance);
 
 			//game->data->status.pegasus = false;
 
@@ -165,6 +169,10 @@ void* Gamestate_Load(struct Game *game, void (*progress)(struct Game*)) {
 	RegisterSpritesheet(game, data->cursor, "pointer");
 	LoadSpritesheets(game, data->cursor);
 	SelectSpritesheet(game, data->cursor, "pointer");
+
+	data->sample = al_load_sample(GetDataFilePath(game, "blow.flac"));
+	data->sample_instance = al_create_sample_instance(data->sample);
+	al_attach_sample_instance_to_mixer(data->sample_instance, game->audio.fx);
 
 	data->timeline = TM_Init(game, "pegasus");
 

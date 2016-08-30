@@ -12,6 +12,8 @@ struct CommonResources {
 		int desired_screen;
 		bool forward;
 
+		int charge;
+
 		char* text;
 		bool doctor;
 
@@ -19,6 +21,10 @@ struct CommonResources {
 		bool mouse_visible;
 
 		bool tutorial;
+
+		bool won;
+
+		int timer;
 
 		struct {
 				bool atari;
