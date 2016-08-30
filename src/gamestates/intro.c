@@ -25,58 +25,204 @@
 struct GamestateResources {
 		// This struct is for every resource allocated and used by your gamestate.
 		// It gets created on load and then gets passed around to all other function calls.
-		ALLEGRO_FONT *font;
-		int blink_counter;
+		struct Timeline *timeline;
+		ALLEGRO_BITMAP *bg;
+		ALLEGRO_BITMAP *sos;
+		ALLEGRO_BITMAP *machine;
+		ALLEGRO_BITMAP *bg1, *bg2;
+		struct Character *bird;
+		ALLEGRO_AUDIO_STREAM *music, *music2;
+		bool show;
+		bool finished;
+		int rotation;
 };
 
-int Gamestate_ProgressCount = 1; // number of loading steps as reported by Gamestate_Load
+int Gamestate_ProgressCount = 3; // number of loading steps as reported by Gamestate_Load
 
 void Gamestate_Logic(struct Game *game, struct GamestateResources* data) {
 	// Called 60 times per second. Here you should do all your game logic.
-	data->blink_counter++;
-	if (data->blink_counter >= 60) {
-		data->blink_counter = 0;
-	}
+	TM_Process(data->timeline);
 }
 
 void Gamestate_Draw(struct Game *game, struct GamestateResources* data) {
 	// Called as soon as possible, but no sooner than next Gamestate_Logic call.
 	// Draw everything to the screen here.
-	if (data->blink_counter < 50) {
-		al_draw_text(data->font, al_map_rgb(255,255,255), game->viewport.width / 2, game->viewport.height / 2,
-		             ALLEGRO_ALIGN_CENTRE, "Nothing to see here, move along!");
+	al_draw_bitmap(data->bg, 0, 0, 0);
+	if (data->show) {
+		al_draw_bitmap(data->machine, 0, 0 ,0);
+		al_draw_bitmap(data->sos, 0, 0 ,0);
 	}
 }
 
 void Gamestate_ProcessEvent(struct Game *game, struct GamestateResources* data, ALLEGRO_EVENT *ev) {
 	// Called for each event in Allegro event queue.
 	// Here you can handle user input, expiring timers etc.
+	TM_HandleEvent(data->timeline, ev);
 	if ((ev->type==ALLEGRO_EVENT_KEY_DOWN) && (ev->keyboard.keycode == ALLEGRO_KEY_ESCAPE)) {
 		UnloadCurrentGamestate(game); // mark this gamestate to be stopped and unloaded
 		// When there are no active gamestates, the engine will quit.
 	}
 }
 
+
+bool TimeTravel(struct Game *game, struct TM_Action *action, enum TM_ActionState state) {
+	struct GamestateResources *data = TM_GetArg(action->arguments, 0);
+	if (state == TM_ACTIONSTATE_RUNNING) {
+		data->show = true;
+	}
+	return true;
+}
+
+bool StartOthers(struct Game *game, struct TM_Action *action, enum TM_ActionState state) {
+	//struct GamestateResources *data = TM_GetArg(action->arguments, 0);
+	if (state == TM_ACTIONSTATE_RUNNING) {
+		StartGamestate(game, "atari");
+		StartGamestate(game, "pegasus");
+		StartGamestate(game, "tape");
+		StartGamestate(game, "floppy");
+		StartGamestate(game, "stage");
+	}
+	return true;
+}
+
+bool Finish(struct Game *game, struct TM_Action *action, enum TM_ActionState state) {
+	struct GamestateResources *data = TM_GetArg(action->arguments, 0);
+	if (state == TM_ACTIONSTATE_RUNNING) {
+		data->finished = true;
+		game->data->tutorial = false;
+		al_set_audio_stream_playing(data->music, false);
+		al_set_audio_stream_playing(data->music2, true);
+
+		int x, y;
+		al_get_mouse_cursor_position(&x, &y);
+		game->data->mousex = (x / (float)al_get_display_width(game->display)) * game->viewport.width;
+		game->data->mousey = (y / (float)al_get_display_height(game->display)) * game->viewport.height;
+		game->data->mouse_visible = true;
+
+	}
+	return true;
+}
+
+bool Rotate(struct Game *game, struct TM_Action *action, enum TM_ActionState state) {
+	struct GamestateResources *data = TM_GetArg(action->arguments, 0);
+	if (state == TM_ACTIONSTATE_RUNNING) {
+		PrintConsole(game, "rotation %d", data->rotation);
+		data->rotation++;
+		if (data->rotation == 60) {
+			data->rotation = 0;
+			game->data->desired_screen++;
+			if (game->data->desired_screen > 3) {
+				game->data->desired_screen = 0;
+			}
+			game->data->forward = true;
+		}
+	}
+	return !game->data->tutorial;
+}
+
+bool Speak(struct Game *game, struct TM_Action *action, enum TM_ActionState state) {
+//	struct GamestateResources *data = TM_GetArg(action->arguments, 0);
+	ALLEGRO_AUDIO_STREAM *stream = TM_GetArg(action->arguments, 1);
+	char *text = TM_GetArg(action->arguments, 2);
+
+	if (state == TM_ACTIONSTATE_INIT) {
+		al_set_audio_stream_playing(stream, false);
+		al_set_audio_stream_playmode(stream, ALLEGRO_PLAYMODE_ONCE);
+	}
+
+	if (state == TM_ACTIONSTATE_START) {
+		//al_rewind_audio_stream(stream);
+		al_attach_audio_stream_to_mixer(stream, game->audio.voice);
+		al_set_audio_stream_playing(stream, true);
+
+		game->data->text = text;
+	}
+
+	if (state == TM_ACTIONSTATE_RUNNING) {
+		return !al_get_audio_stream_playing(stream);
+	}
+
+	if (state == TM_ACTIONSTATE_DESTROY) {
+		al_destroy_audio_stream(stream);
+		game->data->text = NULL;
+	}
+	return false;
+}
+
 void* Gamestate_Load(struct Game *game, void (*progress)(struct Game*)) {
 	// Called once, when the gamestate library is being loaded.
 	// Good place for allocating memory, loading bitmaps etc.
 	struct GamestateResources *data = malloc(sizeof(struct GamestateResources));
-	data->font = al_create_builtin_font();
+	data->timeline = TM_Init(game, "intro");
 	progress(game); // report that we progressed with the loading, so the engine can draw a progress bar
-	return data;
+	data->bg = al_load_bitmap(GetDataFilePath(game, "bg.png"));
+	progress(game); // report that we progressed with the loading, so the engine can draw a progress bar
+	data->music = al_load_audio_stream(GetDataFilePath(game, "music1.flac"), 4, 1024);
+	al_attach_audio_stream_to_mixer(data->music, game->audio.music);
+	al_set_audio_stream_playmode(data->music, ALLEGRO_PLAYMODE_LOOP);
+
+	data->music2 = al_load_audio_stream(GetDataFilePath(game, "music2.flac"), 4, 1024);
+	al_set_audio_stream_playing(data->music2, false);
+	al_attach_audio_stream_to_mixer(data->music2, game->audio.music);
+	al_set_audio_stream_playmode(data->music2, ALLEGRO_PLAYMODE_LOOP);
+
+	progress(game); // report that we progressed with the loading, so the engine can draw a progress bar
+
+	data->machine = al_load_bitmap(GetDataFilePath(game, "machin.png"));
+	data->sos = al_load_bitmap(GetDataFilePath(game, "dr.png"));
+/*
+	TM_AddAction(data->timeline, Speak, TM_AddToArgs(NULL, 3, data, al_load_audio_stream(GetDataFilePath(game, "voice/0.flac"), 4, 1024),
+																									 "A crazy scientist from the future"), "speak");
+	TM_AddAction(data->timeline, Speak, TM_AddToArgs(NULL, 3, data, al_load_audio_stream(GetDataFilePath(game, "voice/1.flac"), 4, 1024),
+																									 "built a time machine"), "speak");
+	TM_AddAction(data->timeline, Speak, TM_AddToArgs(NULL, 3, data, al_load_audio_stream(GetDataFilePath(game, "voice/2.flac"), 4, 1024),
+																									 "and he went back in time."), "speak");
+
+	TM_AddDelay(data->timeline, 500);
+	TM_AddAction(data->timeline, TimeTravel, TM_AddToArgs(NULL, 1, data), "timetravel");
+	TM_AddDelay(data->timeline, 1500);
+
+	TM_AddAction(data->timeline, Speak, TM_AddToArgs(NULL, 3, data, al_load_audio_stream(GetDataFilePath(game, "voice/3.flac"), 4, 1024),
+																									 "Unfortunately, his time machine broke!"), "speak");
+	TM_AddAction(data->timeline, Speak, TM_AddToArgs(NULL, 3, data, al_load_audio_stream(GetDataFilePath(game, "voice/4a.flac"), 4, 1024),
+																									 "Oh oh!"), "speak");
+	TM_AddAction(data->timeline, Speak, TM_AddToArgs(NULL, 3, data, al_load_audio_stream(GetDataFilePath(game, "voice/4b.flac"), 4, 1024),
+																									 "- said crazy scientist"), "speak");
+
+	//---------------
+	TM_AddDelay(data->timeline, 250);
+	TM_AddAction(data->timeline, StartOthers, TM_AddToArgs(NULL, 1, data), "start");
+	TM_AddDelay(data->timeline, 250);
+	TM_AddQueuedBackgroundAction(data->timeline, Rotate, TM_AddToArgs(NULL, 1, data), 0, "rotate");
+
+	TM_AddAction(data->timeline, Speak, TM_AddToArgs(NULL, 3, data, al_load_audio_stream(GetDataFilePath(game, "voice/5.flac"), 4, 1024),
+																									 "Now he got some pieces of ancient technology"), "speak");
+	TM_AddAction(data->timeline, Speak, TM_AddToArgs(NULL, 3, data, al_load_audio_stream(GetDataFilePath(game, "voice/6.flac"), 4, 1024),
+																									 "and he's trying to fix his time machine."), "speak");
+	TM_AddAction(data->timeline, Speak, TM_AddToArgs(NULL, 3, data, al_load_audio_stream(GetDataFilePath(game, "voice/7.flac"), 4, 1024),
+																									 "I need all of these working together!"), "speak");
+	TM_AddAction(data->timeline, Speak, TM_AddToArgs(NULL, 3, data, al_load_audio_stream(GetDataFilePath(game, "voice/8.flac"), 4, 1024),
+																									 "- said crazy scientist"), "speak");
+*/		TM_AddAction(data->timeline, StartOthers, TM_AddToArgs(NULL, 1, data), "start");
+TM_AddAction(data->timeline, Finish, TM_AddToArgs(NULL, 1, data), "finish");
+
+  return data;
 }
 
 void Gamestate_Unload(struct Game *game, struct GamestateResources* data) {
 	// Called when the gamestate library is being unloaded.
 	// Good place for freeing all allocated memory and resources.
-	al_destroy_font(data->font);
+	TM_Destroy(data->timeline);
 	free(data);
 }
 
 void Gamestate_Start(struct Game *game, struct GamestateResources* data) {
 	// Called when this gamestate gets control. Good place for initializing state,
 	// playing music etc.
-	data->blink_counter = 0;
+	data->show = false;
+	data->finished = false;
+	game->data->tutorial = true;
+	data->rotation = 0;
 }
 
 void Gamestate_Stop(struct Game *game, struct GamestateResources* data) {

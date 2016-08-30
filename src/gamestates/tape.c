@@ -74,6 +74,11 @@ void Gamestate_ProcessEvent(struct Game *game, struct GamestateResources* data, 
 		}
 		SelectSpritesheet(game, data->status, name);
 	}
+
+	if (game->data->current_screen != 2) {
+		return;
+	}
+
 }
 
 void* Gamestate_Load(struct Game *game, void (*progress)(struct Game*)) {
@@ -110,7 +115,7 @@ void* Gamestate_Load(struct Game *game, void (*progress)(struct Game*)) {
 	RegisterSpritesheet(game, data->status, "1110");
 	RegisterSpritesheet(game, data->status, "1111");
 	LoadSpritesheets(game, data->status);
-	SelectSpritesheet(game, data->status, "0111");
+	SelectSpritesheet(game, data->status, "1111");
 
 	data->timemachine = CreateCharacter(game, "timemachine");
 	RegisterSpritesheet(game, data->timemachine, "charging");

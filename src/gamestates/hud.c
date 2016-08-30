@@ -44,13 +44,15 @@ void Gamestate_Logic(struct Game *game, struct GamestateResources* data) {
 void Gamestate_Draw(struct Game *game, struct GamestateResources* data) {
 	// Called as soon as possible, but no sooner than next Gamestate_Logic call.
 	// Draw everything to the screen here.
-	DrawTextWithShadow(data->font, al_map_rgb(255,255,255), 10, game->viewport.height / 2 - 10,
-	             ALLEGRO_ALIGN_LEFT, "<");
-	DrawTextWithShadow(data->font, al_map_rgb(255,255,255), game->viewport.width - 10, game->viewport.height / 2 - 10,
-	             ALLEGRO_ALIGN_RIGHT, ">");
+	if (!game->data->tutorial) {
+		DrawTextWithShadow(data->font, al_map_rgb(255,255,255), 10, game->viewport.height / 2 - 10,
+		             ALLEGRO_ALIGN_LEFT, "<");
+		DrawTextWithShadow(data->font, al_map_rgb(255,255,255), game->viewport.width - 10, game->viewport.height / 2 - 10,
+		             ALLEGRO_ALIGN_RIGHT, ">");
+	}
 
+	al_draw_filled_rectangle(0, 0, 320, 20 + data->alpha, al_map_rgba(0,0,0,128));
 	if (game->data->text) {
-		al_draw_filled_rectangle(0, 0, 320, 20 + data->alpha, al_map_rgba(0,0,0,128));
 		DrawTextWithShadow(data->dialog, al_map_rgb(255,255,255), game->viewport.width / 2, 5 + data->alpha, ALLEGRO_ALIGN_CENTER, game->data->text);
 	}
 
@@ -64,6 +66,10 @@ void Gamestate_ProcessEvent(struct Game *game, struct GamestateResources* data, 
 		// When there are no active gamestates, the engine will quit.
 	}
 
+	if (game->data->tutorial) {
+		return;
+	}
+
 	if (ev->type==ALLEGRO_EVENT_KEY_DOWN) {
 		if (ev->keyboard.keycode == ALLEGRO_KEY_LEFT) {
 			game->data->desired_screen--;
@@ -73,7 +79,6 @@ void Gamestate_ProcessEvent(struct Game *game, struct GamestateResources* data, 
 			game->data->forward = false;
 			ALLEGRO_EVENT ev;
 			ev.user.type = DRSAUCE_EVENT_SWITCH_SCREEN;
-			ev.user.data1 = game->data->desired_screen;
 			al_emit_user_event(&(game->event_source), &ev, NULL);
 		} else if (ev->keyboard.keycode == ALLEGRO_KEY_RIGHT) {
 			game->data->desired_screen++;
@@ -83,7 +88,6 @@ void Gamestate_ProcessEvent(struct Game *game, struct GamestateResources* data, 
 			game->data->forward = true;
 			ALLEGRO_EVENT ev;
 			ev.user.type = DRSAUCE_EVENT_SWITCH_SCREEN;
-			ev.user.data1 = game->data->desired_screen;
 			al_emit_user_event(&(game->event_source), &ev, NULL);
 		}
 		PrintConsole(game, "KEY desired %d, current %d, forward %d, offset %d", game->data->desired_screen, game->data->current_screen, game->data->forward, game->data->offset);

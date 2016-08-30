@@ -35,6 +35,10 @@ struct CommonResources* CreateGameData(struct Game *game) {
 	data->text = NULL;
 	data->doctor = false;
 
+	data->sample = al_load_sample(GetDataFilePath(game, "warning.flac"));
+	data->sample_instance = al_create_sample_instance(data->sample);
+	al_attach_sample_instance_to_mixer(data->sample_instance, game->audio.fx);
+
 	return data;
 }
 
@@ -49,6 +53,7 @@ void DestroyGameData(struct Game *game, struct CommonResources *resources) {
 void StartGame(struct Game *game) {
 	UnloadAllGamestates(game);
 
+	LoadGamestate(game, "intro");
 	LoadGamestate(game, "atari");
 	LoadGamestate(game, "pegasus");
 	LoadGamestate(game, "tape");
@@ -56,11 +61,12 @@ void StartGame(struct Game *game) {
 	LoadGamestate(game, "stage");
 	LoadGamestate(game, "hud");
 
-	StartGamestate(game, "atari");
-	StartGamestate(game, "pegasus");
-	StartGamestate(game, "tape");
-	StartGamestate(game, "floppy");
-	StartGamestate(game, "stage");
+	//StartGamestate(game, "atari");
+	//StartGamestate(game, "pegasus");
+	//StartGamestate(game, "tape");
+	//StartGamestate(game, "floppy");
+	//StartGamestate(game, "stage");
+	StartGamestate(game, "intro");
 	StartGamestate(game, "hud");
 
 	game->data->status.atari = true;
@@ -69,3 +75,12 @@ void StartGame(struct Game *game) {
 	game->data->status.tape = true;
 }
 
+void UpdateStatus(struct Game *game) {
+	ALLEGRO_EVENT ev;
+	ev.user.type = DRSAUCE_EVENT_STATUS_UPDATE;
+	al_emit_user_event(&(game->event_source), &ev, NULL);
+
+	if (!game->data->status.atari || !game->data->status.floppy || !game->data->status.pegasus || !game->data->status.tape) {
+		al_play_sample_instance(game->data->sample_instance);
+	}
+}

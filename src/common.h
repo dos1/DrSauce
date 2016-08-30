@@ -18,17 +18,23 @@ struct CommonResources {
 		int mousex, mousey;
 		bool mouse_visible;
 
+		bool tutorial;
+
 		struct {
 				bool atari;
 				bool floppy;
 				bool pegasus;
 				bool tape;
 		} status;
+
+		ALLEGRO_SAMPLE *sample;
+		ALLEGRO_SAMPLE_INSTANCE *sample_instance;
 };
 
 struct CommonResources* CreateGameData(struct Game *game);
 void DestroyGameData(struct Game *game, struct CommonResources *resources);
 void StartGame(struct Game *game);
+void UpdateStatus(struct Game *game);
 
 typedef enum {
 	DRSAUCE_EVENT_SWITCH_SCREEN = 512,

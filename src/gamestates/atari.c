@@ -70,30 +70,22 @@ void Gamestate_Logic(struct Game *game, struct GamestateResources* data) {
 	if ((old_temp > 25) && (data->temperature <= 25)) {
 		SelectSpritesheet(game, data->meter, "meter-red");
 		game->data->status.atari = false;
-		ALLEGRO_EVENT ev;
-		ev.user.type = DRSAUCE_EVENT_STATUS_UPDATE;
-		al_emit_user_event(&(game->event_source), &ev, NULL);
+		UpdateStatus(game);
 	}
 	if ((old_temp > 75) && (data->temperature <= 75)) {
 		SelectSpritesheet(game, data->meter, "meter-orange");
 		game->data->status.atari = true;
-		ALLEGRO_EVENT ev;
-		ev.user.type = DRSAUCE_EVENT_STATUS_UPDATE;
-		al_emit_user_event(&(game->event_source), &ev, NULL);
+		UpdateStatus(game);
 	}
 	if ((old_temp <= 25) && (data->temperature > 25)) {
 		SelectSpritesheet(game, data->meter, "meter-orange");
 		game->data->status.atari = true;
-		ALLEGRO_EVENT ev;
-		ev.user.type = DRSAUCE_EVENT_STATUS_UPDATE;
-		al_emit_user_event(&(game->event_source), &ev, NULL);
+		UpdateStatus(game);
 	}
 	if ((old_temp <= 75) && (data->temperature > 75)) {
 		SelectSpritesheet(game, data->meter, "meter-green");
 		game->data->status.atari = true;
-		ALLEGRO_EVENT ev;
-		ev.user.type = DRSAUCE_EVENT_STATUS_UPDATE;
-		al_emit_user_event(&(game->event_source), &ev, NULL);
+		UpdateStatus(game);
 	}
 
 

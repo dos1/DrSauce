@@ -50,9 +50,7 @@ void Gamestate_Logic(struct Game *game, struct GamestateResources* data) {
 			data->broken = true;
 			SelectSpritesheet(game, data->tv, "broken");
 			game->data->status.pegasus = false;
-			ALLEGRO_EVENT ev;
-			ev.user.type = DRSAUCE_EVENT_STATUS_UPDATE;
-			al_emit_user_event(&(game->event_source), &ev, NULL);
+			UpdateStatus(game);
 		}
 	}
 }
@@ -93,9 +91,7 @@ bool FixCartridge(struct Game *game, struct TM_Action *action, enum TM_ActionSta
 			SelectSpritesheet(game, data->tv, "broken");
 			SelectSpritesheet(game, data->pegasus, "full");
 		}
-		ALLEGRO_EVENT ev;
-		ev.user.type = DRSAUCE_EVENT_STATUS_UPDATE;
-		al_emit_user_event(&(game->event_source), &ev, NULL);
+		UpdateStatus(game);
 
 	}
 	return true;
@@ -115,6 +111,8 @@ void Gamestate_ProcessEvent(struct Game *game, struct GamestateResources* data, 
 		TM_CleanQueue(data->timeline);
 		SelectSpritesheet(game, data->pegasus, "full");
 		SelectSpritesheet(game, data->tv, data->broken ? "broken" : "working");
+		game->data->status.pegasus = !data->broken;
+		UpdateStatus(game);
 	}
 
 	if (game->data->current_screen != 1) {
@@ -127,11 +125,9 @@ void Gamestate_ProcessEvent(struct Game *game, struct GamestateResources* data, 
 			SelectSpritesheet(game, data->pegasus, "empty");
 			data->blowing = true;
 
-			game->data->status.pegasus = false;
+			//game->data->status.pegasus = false;
 
-			ALLEGRO_EVENT ev;
-			ev.user.type = DRSAUCE_EVENT_STATUS_UPDATE;
-			al_emit_user_event(&(game->event_source), &ev, NULL);
+			//UpdateStatus(game);
 
 			TM_AddDelay(data->timeline, 1000);
 			TM_AddAction(data->timeline, FixCartridge, TM_AddToArgs(NULL, 1, data), "FixCartridge");
