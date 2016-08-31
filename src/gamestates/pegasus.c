@@ -69,7 +69,7 @@ void Gamestate_Draw(struct Game *game, struct GamestateResources* data) {
 	if (data->blowing) {
 		DrawCharacter(game, data->cartridge, al_map_rgb(255,255,255), 0);
 	}
-	if (game->data->mouse_visible) {
+	if (game->data->mouse_visible && !data->blowing) {
 		DrawCharacter(game, data->cursor, al_map_rgb(255,255,255), 0);
 	}
 
