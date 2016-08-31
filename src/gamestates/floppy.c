@@ -40,6 +40,7 @@ struct GamestateResources {
 		ALLEGRO_FONT *font_screen;
 		ALLEGRO_FONT *font_disk;
 		int blink;
+		int chance;
 };
 
 int Gamestate_ProgressCount = 1; // number of loading steps as reported by Gamestate_Load
@@ -104,6 +105,10 @@ void Gamestate_ProcessEvent(struct Game *game, struct GamestateResources* data, 
 		// When there are no active gamestates, the engine will quit.
 	}
 
+	if (ev->type == DRSAUCE_EVENT_END_TUTORIAL) {
+		data->counter = 886;
+	}
+
 	if (game->data->current_screen != 3) {
 		return;
 	}
@@ -112,8 +117,15 @@ void Gamestate_ProcessEvent(struct Game *game, struct GamestateResources* data, 
 		if (!data->taken && IsOnCharacter(game, data->floppies, game->data->mousex, game->data->mousey)) {
 			data->taken = true;
 			data->taken_nr = (rand() % 8) + 1;
+			if (rand() % data->chance == 0) {
+				data->taken_nr = data->needed;
+				data->chance = 16;
+			} else {
+				data->chance--;
+			}
 		} else if (data->taken) {
 			data->taken = false;
+			data->chance = 16;
 			bool wasgood = (data->nr_inside != data->needed);
 			data->nr_inside = data->taken_nr;
 			data->needs_change = (data->nr_inside != data->needed);
@@ -179,6 +191,8 @@ void Gamestate_Start(struct Game *game, struct GamestateResources* data) {
 	data->counter = 1500;
 	data->needed = 1;
 	data->nr_inside = 1;
+	data->chance = 16;
+	data->blink = 0;
 }
 
 void Gamestate_Stop(struct Game *game, struct GamestateResources* data) {

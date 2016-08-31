@@ -26,6 +26,8 @@ struct CommonResources {
 
 		int timer;
 
+		bool skip;
+
 		struct {
 				bool atari;
 				bool floppy;
@@ -45,5 +47,5 @@ void UpdateStatus(struct Game *game);
 typedef enum {
 	DRSAUCE_EVENT_SWITCH_SCREEN = 512,
 	DRSAUCE_EVENT_STATUS_UPDATE,
-	DRSAUCE_EVENT_TUTORIAL
+	DRSAUCE_EVENT_END_TUTORIAL
 } DRSAUCE_EVENT_TYPE;

@@ -159,6 +159,12 @@ void Gamestate_ProcessEvent(struct Game *game, struct GamestateResources* data, 
 		TM_CleanQueue(data->timeline);
 	}
 
+	if (ev->type == DRSAUCE_EVENT_END_TUTORIAL) {
+		data->temperature = 42.205963;
+		data->coal_amount = 10;
+		data->counter = 0;
+	}
+
 	if (game->data->current_screen != 0) {
 		return;
 	}
@@ -239,6 +245,7 @@ void Gamestate_Start(struct Game *game, struct GamestateResources* data) {
 
 	data->temperature = 50;
 	data->coal_amount = 20;
+	data->counter = 60;
 }
 
 void Gamestate_Stop(struct Game *game, struct GamestateResources* data) {

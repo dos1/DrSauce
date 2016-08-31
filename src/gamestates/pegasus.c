@@ -109,6 +109,10 @@ void Gamestate_ProcessEvent(struct Game *game, struct GamestateResources* data, 
 		// When there are no active gamestates, the engine will quit.
 	}
 
+	if (ev->type == DRSAUCE_EVENT_END_TUTORIAL) {
+		data->timer = 502;
+	}
+
 	if (ev->type == DRSAUCE_EVENT_SWITCH_SCREEN) {
 		data->blowing = false;
 		TM_CleanQueue(data->timeline);
@@ -187,6 +191,8 @@ void Gamestate_Unload(struct Game *game, struct GamestateResources* data) {
 	DestroyCharacter(game, data->tv);
 	DestroyCharacter(game, data->cartridge);
 	DestroyCharacter(game, data->cursor);
+	al_destroy_sample_instance(data->sample_instance);
+	al_destroy_sample(data->sample);
 	TM_Destroy(data->timeline);
 	free(data);
 }

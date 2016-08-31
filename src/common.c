@@ -49,6 +49,8 @@ void DestroyGameData(struct Game *game, struct CommonResources *resources) {
 	al_destroy_bitmap(game->data->pegasus);
 	al_destroy_bitmap(game->data->tape);
 	al_destroy_bitmap(game->data->floppy);
+	al_destroy_sample_instance(game->data->sample_instance);
+	al_destroy_sample(game->data->sample);
 	free(resources);
 }
 

@@ -65,6 +65,13 @@ void Gamestate_ProcessEvent(struct Game *game, struct GamestateResources* data, 
 		UnloadCurrentGamestate(game); // mark this gamestate to be stopped and unloaded
 		// When there are no active gamestates, the engine will quit.
 	}
+	if (ev->type==ALLEGRO_EVENT_KEY_DOWN) {
+
+		if (ev->keyboard.keycode == ALLEGRO_KEY_FULLSTOP) {
+			game->data->skip = true;
+		}
+
+	}
 
 	if (game->data->tutorial) {
 		return;

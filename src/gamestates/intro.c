@@ -29,9 +29,13 @@ struct GamestateResources {
 		ALLEGRO_BITMAP *bg;
 		ALLEGRO_BITMAP *sos;
 		ALLEGRO_BITMAP *machine;
-		ALLEGRO_BITMAP *bg1, *bg2;
+		//ALLEGRO_BITMAP *bg1, *bg2;
 		ALLEGRO_BITMAP *bird;
-		ALLEGRO_AUDIO_STREAM *music, *music2;
+
+		ALLEGRO_SAMPLE *music_sample;
+		ALLEGRO_SAMPLE_INSTANCE *music;
+		ALLEGRO_SAMPLE *music2_sample;
+		ALLEGRO_SAMPLE_INSTANCE *music2;
 
 		ALLEGRO_SAMPLE *sample;
 		ALLEGRO_SAMPLE_INSTANCE *sample_instance;
@@ -99,14 +103,18 @@ bool Finish(struct Game *game, struct TM_Action *action, enum TM_ActionState sta
 		game->data->desired_screen=2;
 		game->data->forward = true;
 		game->data->charge=0;
-		al_set_audio_stream_playing(data->music, false);
-		al_set_audio_stream_playing(data->music2, true);
+		al_stop_sample_instance(data->music);
+		al_play_sample_instance(data->music2);
 
 		int x, y;
 		al_get_mouse_cursor_position(&x, &y);
 		game->data->mousex = (x / (float)al_get_display_width(game->display)) * game->viewport.width;
 		game->data->mousey = (y / (float)al_get_display_height(game->display)) * game->viewport.height;
 		game->data->mouse_visible = true;
+
+		ALLEGRO_EVENT ev;
+		ev.user.type = DRSAUCE_EVENT_END_TUTORIAL;
+		al_emit_user_event(&(game->event_source), &ev, NULL);
 
 	}
 	return true;
@@ -115,9 +123,10 @@ bool Finish(struct Game *game, struct TM_Action *action, enum TM_ActionState sta
 bool Rotate(struct Game *game, struct TM_Action *action, enum TM_ActionState state) {
 	struct GamestateResources *data = TM_GetArg(action->arguments, 0);
 	if (state == TM_ACTIONSTATE_RUNNING) {
-		PrintConsole(game, "rotation %d", data->rotation);
+		//PrintConsole(game, "rotation %d", data->rotation);
 		data->rotation++;
 		if (data->rotation == 60) {
+			PrintConsole(game, "rotate");
 			data->rotation = 0;
 			game->data->desired_screen++;
 			if (game->data->desired_screen > 3) {
@@ -140,6 +149,7 @@ bool Speak(struct Game *game, struct TM_Action *action, enum TM_ActionState stat
 	}
 
 	if (state == TM_ACTIONSTATE_START) {
+		game->data->skip = false;
 		//al_rewind_audio_stream(stream);
 		al_attach_audio_stream_to_mixer(stream, game->audio.voice);
 		al_set_audio_stream_playing(stream, true);
@@ -148,7 +158,7 @@ bool Speak(struct Game *game, struct TM_Action *action, enum TM_ActionState stat
 	}
 
 	if (state == TM_ACTIONSTATE_RUNNING) {
-		return !al_get_audio_stream_playing(stream);
+		return !al_get_audio_stream_playing(stream) || game->data->skip;
 	}
 
 	if (state == TM_ACTIONSTATE_DESTROY) {
@@ -166,14 +176,18 @@ void* Gamestate_Load(struct Game *game, void (*progress)(struct Game*)) {
 	progress(game); // report that we progressed with the loading, so the engine can draw a progress bar
 	data->bg = al_load_bitmap(GetDataFilePath(game, "bg.png"));
 	progress(game); // report that we progressed with the loading, so the engine can draw a progress bar
-	data->music = al_load_audio_stream(GetDataFilePath(game, "music1.flac"), 4, 1024);
-	al_attach_audio_stream_to_mixer(data->music, game->audio.music);
-	al_set_audio_stream_playmode(data->music, ALLEGRO_PLAYMODE_LOOP);
 
-	data->music2 = al_load_audio_stream(GetDataFilePath(game, "music2.flac"), 4, 1024);
-	al_set_audio_stream_playing(data->music2, false);
-	al_attach_audio_stream_to_mixer(data->music2, game->audio.music);
-	al_set_audio_stream_playmode(data->music2, ALLEGRO_PLAYMODE_LOOP);
+	data->music_sample = al_load_sample(GetDataFilePath(game, "music1.flac"));
+	data->music = al_create_sample_instance(data->music_sample);
+	al_attach_sample_instance_to_mixer(data->music, game->audio.music);
+	al_set_sample_instance_playmode(data->music, ALLEGRO_PLAYMODE_LOOP);
+
+	data->music2_sample = al_load_sample(GetDataFilePath(game, "music2.flac"));
+	data->music2 = al_create_sample_instance(data->music2_sample);
+	al_attach_sample_instance_to_mixer(data->music2, game->audio.music);
+	al_set_sample_instance_playmode(data->music2, ALLEGRO_PLAYMODE_LOOP);
+
+	al_play_sample_instance(data->music);
 
 	progress(game); // report that we progressed with the loading, so the engine can draw a progress bar
 
@@ -227,6 +241,16 @@ TM_AddAction(data->timeline, Finish, TM_AddToArgs(NULL, 1, data), "finish");
 void Gamestate_Unload(struct Game *game, struct GamestateResources* data) {
 	// Called when the gamestate library is being unloaded.
 	// Good place for freeing all allocated memory and resources.
+	al_destroy_bitmap(data->bg);
+	al_destroy_bitmap(data->sos);
+	al_destroy_bitmap(data->machine);
+	al_destroy_bitmap(data->bird);
+	al_destroy_sample_instance(data->music);
+	al_destroy_sample_instance(data->music2);
+	al_destroy_sample_instance(data->sample_instance);
+	al_destroy_sample(data->music_sample);
+	al_destroy_sample(data->music2_sample);
+	al_destroy_sample(data->sample);
 	TM_Destroy(data->timeline);
 	free(data);
 }

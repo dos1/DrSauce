@@ -54,7 +54,9 @@ void Gamestate_Logic(struct Game *game, struct GamestateResources* data) {
 		if (!game->data->status.atari || !game->data->status.floppy || !game->data->status.pegasus || !game->data->status.tape) {
 			game->data->charge-=2;
 		} else {
-			game->data->charge+=4;
+			if (!game->data->tutorial) {
+				game->data->charge+=4;
+			}
 		}
 
 		if (game->data->charge < 0) {
@@ -115,6 +117,8 @@ bool Speak(struct Game *game, struct TM_Action *action, enum TM_ActionState stat
 	}
 
 	if (state == TM_ACTIONSTATE_START) {
+		if (game->data->won) return true;
+		game->data->skip = false;
 		//al_rewind_audio_stream(stream);
 		al_attach_audio_stream_to_mixer(stream, game->audio.voice);
 		al_set_audio_stream_playing(stream, true);
@@ -123,12 +127,14 @@ bool Speak(struct Game *game, struct TM_Action *action, enum TM_ActionState stat
 	}
 
 	if (state == TM_ACTIONSTATE_RUNNING) {
-		return !al_get_audio_stream_playing(stream);
+		return !al_get_audio_stream_playing(stream) || game->data->skip;
 	}
 
 	if (state == TM_ACTIONSTATE_DESTROY) {
 		al_destroy_audio_stream(stream);
-		game->data->text = NULL;
+		if (!game->data->won) {
+			game->data->text = NULL;
+		}
 	}
 	return false;
 }
@@ -142,7 +148,7 @@ void Gamestate_ProcessEvent(struct Game *game, struct GamestateResources* data, 
 	}
 	TM_HandleEvent(data->timeline, ev);
 
-	if (ev->type == DRSAUCE_EVENT_STATUS_UPDATE) {
+	if ((ev->type == DRSAUCE_EVENT_STATUS_UPDATE) && (!game->data->won)) {
 		char name[5] = "0000";
 		if (game->data->status.atari) {
 			name[0] = '1';
@@ -175,11 +181,14 @@ void Gamestate_ProcessEvent(struct Game *game, struct GamestateResources* data, 
 
 				game->data->tutorial = true;
 				game->data->won = true;
+				game->data->mouse_visible = false;
 			} else {
-				TM_AddAction(data->timeline, Speak, TM_AddToArgs(NULL, 3, data, al_load_audio_stream(GetDataFilePath(game, "voice/machine1.flac"), 4, 1024),
-				                                                 "The machine is not ready yet!"), "speak");
-				TM_AddAction(data->timeline, Speak, TM_AddToArgs(NULL, 3, data, al_load_audio_stream(GetDataFilePath(game, "voice/machine2.flac"), 4, 1024),
-				                                                 "- said the scientist"), "speak");
+				if (!game->data->text) {
+					TM_AddAction(data->timeline, Speak, TM_AddToArgs(NULL, 3, data, al_load_audio_stream(GetDataFilePath(game, "voice/machine1.flac"), 4, 1024),
+					                                                 "The machine is not ready yet!"), "speak");
+					TM_AddAction(data->timeline, Speak, TM_AddToArgs(NULL, 3, data, al_load_audio_stream(GetDataFilePath(game, "voice/machine2.flac"), 4, 1024),
+					                                                 "- said the scientist"), "speak");
+				}
 			}
 		}
 	}
@@ -224,7 +233,6 @@ void* Gamestate_Load(struct Game *game, void (*progress)(struct Game*)) {
 
 	data->timeline = TM_Init(game, "tape");
 
-
 	data->cursor = CreateCharacter(game, "cursor");
 	RegisterSpritesheet(game, data->cursor, "pointer");
 	LoadSpritesheets(game, data->cursor);
@@ -265,7 +273,17 @@ void Gamestate_Unload(struct Game *game, struct GamestateResources* data) {
 	DestroyCharacter(game, data->timemachine);
 	DestroyCharacter(game, data->tape);
 	DestroyCharacter(game, data->drive);
+	DestroyCharacter(game, data->cursor);
+	al_destroy_sample_instance(data->sample_instance);
+	al_destroy_sample(data->sample);
+	al_destroy_sample_instance(data->sample_instance2);
+	al_destroy_sample(data->sample2);
+	TM_Destroy(data->timeline);
 	free(data);
+	if (game->data->won) {
+		free(game->data->text);
+		game->data->text = NULL;
+	}
 }
 
 void Gamestate_Start(struct Game *game, struct GamestateResources* data) {
