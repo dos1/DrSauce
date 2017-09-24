@@ -25,10 +25,13 @@
 struct CommonResources* CreateGameData(struct Game *game) {
 	struct CommonResources* data = calloc(1, sizeof(struct CommonResources));
 
+	int flags = al_get_new_bitmap_flags();
+	al_add_new_bitmap_flag(ALLEGRO_NO_PRESERVE_TEXTURE);
 	data->atari = al_create_bitmap(320, 180);
 	data->pegasus = al_create_bitmap(320, 180);
 	data->tape = al_create_bitmap(320, 180);
 	data->floppy = al_create_bitmap(320, 180);
+	al_set_new_bitmap_flags(flags);
 
 	data->offset = 0;
 
@@ -43,6 +46,20 @@ struct CommonResources* CreateGameData(struct Game *game) {
 
 	return data;
 }
+
+bool GlobalEventHandler(struct Game *game, ALLEGRO_EVENT *event) {
+	if (event->type == ALLEGRO_EVENT_DISPLAY_RESUME_DRAWING) {
+		int flags = al_get_new_bitmap_flags();
+		al_add_new_bitmap_flag(ALLEGRO_NO_PRESERVE_TEXTURE);
+		game->data->atari = al_create_bitmap(320, 180);
+		game->data->pegasus = al_create_bitmap(320, 180);
+		game->data->tape = al_create_bitmap(320, 180);
+		game->data->floppy = al_create_bitmap(320, 180);
+		al_set_new_bitmap_flags(flags);
+	}
+	return false;
+}
+
 
 void DestroyGameData(struct Game *game, struct CommonResources *resources) {
 	al_destroy_bitmap(game->data->atari);

@@ -40,8 +40,10 @@ int main(int argc, char** argv) {
 	al_set_org_name("dosowisko.net");
 	al_set_app_name(PRETTY_GAMENAME);
 
-	struct Game *game = libsuperderpy_init(argc, argv, GAMENAME, (struct libsuperderpy_viewport){320, 180});
+	struct Game *game = libsuperderpy_init(argc, argv, GAMENAME, (struct Viewport){320, 180});
 	if (!game) { return 1; }
+
+	game->eventHandler = &GlobalEventHandler;
 
 	al_set_window_title(game->display, PRETTY_GAMENAME);
 

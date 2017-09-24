@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 2.8)
 
 project(DrSauce C)
 
+add_definitions(-DLIBSUPERDERPY_MOUSE_EMULATION)
+
 SET(LIBSUPERDERPY_GAMENAME "drsauce" CACHE INTERNAL "")
 SET(LIBSUPERDERPY_GAMENAME_PRETTY "Dr. Sauce" CACHE INTERNAL "")
 

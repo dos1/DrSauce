@@ -61,6 +61,7 @@ void Gamestate_Draw(struct Game *game, struct GamestateResources* data) {
 		al_draw_bitmap(data->machine, 0, 0 ,0);
 		al_draw_bitmap(data->sos, 0, 0 ,0);
 	}
+TM_DrawDebug(game, data->timeline, 0);
 }
 
 void Gamestate_ProcessEvent(struct Game *game, struct GamestateResources* data, ALLEGRO_EVENT *ev) {

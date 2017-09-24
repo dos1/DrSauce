@@ -87,7 +87,7 @@ void Gamestate_ProcessEvent(struct Game *game, struct GamestateResources* data, 
 			ALLEGRO_EVENT ev;
 			ev.user.type = DRSAUCE_EVENT_SWITCH_SCREEN;
 			al_emit_user_event(&(game->event_source), &ev, NULL);
-		} else if (ev->keyboard.keycode == ALLEGRO_KEY_RIGHT) {
+		} else if ((ev->keyboard.keycode == ALLEGRO_KEY_RIGHT) || (ev->keyboard.keycode == ALLEGRO_KEY_BACK)) {
 			game->data->desired_screen++;
 			if (game->data->desired_screen > 3) {
 				game->data->desired_screen = 0;
